@@ -1,0 +1,69 @@
+from IPython.display import display, HTML
+import seaborn as sns
+import random
+import matplotlib.pyplot as plt
+import plotly.express as px
+​
+def eda(df):
+    print("==================================================================")
+    print("1. Dataframe Shape: ",df.shape)
+    print("==================================================================")
+    print("2. Explore the Data: ")
+    display(HTML(df.head(5).to_html()))
+    print("==================================================================")
+    print("3. Information on the Data: ")
+    data_info_df                      = pd.DataFrame(df.dtypes, columns=['data type'])
+    data_info_df['Duplicated_Values'] = df.duplicated().sum()
+    data_info_df['Missing_Values']    = df.isnull().sum().values 
+    data_info_df['%Missing']          = df.isnull().sum().values / len(df)* 100
+    data_info_df['Unique_Values']     = df.nunique().values
+    df_desc                           = df.describe(include='all').transpose()
+    data_info_df['Count']             = df_desc['count'].values
+    data_info_df['Mean']              = df_desc['mean'].values
+    data_info_df['STD']               = df_desc['std'].values
+    data_info_df['Min']               = df_desc['min'].values
+    data_info_df['Max']               = df_desc['max'].values
+    data_info_df                      = data_info_df[['Count','Mean','STD', 'Min', 'Max','Duplicated_Values','Missing_Values',
+                                                     '%Missing','Unique_Values']]   
+    display(HTML(data_info_df.to_html()))
+    print("==================================================================")
+    print("4. Correlation Matrix Heatmap - For Numeric Variables:")
+    num_cols = df.select_dtypes(include = ['float64','int64']).columns.tolist()
+    correlation_matrix = df[num_cols].corr()
+    plt.figure(figsize=(12, 8))
+    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', linewidths=0.5, fmt='.2f')
+    plt.show()
+    print("==================================================================")
+    print("5. Correlation with Target Variable :")
+    target_corr = correlation_matrix['Age'].drop('Age')
+    target_corr_sorted = target_corr.sort_values(ascending=False)
+    sns.set(font_scale=0.8)
+    sns.set_style("white")
+    sns.set_palette("PuBuGn_d")
+    sns.heatmap(target_corr_sorted.to_frame(), cmap="coolwarm", annot=True, fmt='.2f')
+    plt.show()
+    print("==================================================================")
+    print("6. Distribution of Nan values")
+    print(df.isnull().sum())
+    print("==================================================================")
+    print("7. Distribution of Numerical Variables")
+    for col in num_cols:
+        sns.histplot(df[col], kde=True)
+        plt.xlabel(col)
+        plt.ylabel('Frequency')
+        plt.title('Distribution of {}'.format(col))
+        plt.show()
+    print("==================================================================")
+    print("8. Distribution of Categorical Variables")
+    cat_cols = df.select_dtypes(include = ['object']).columns.tolist()
+    for col in cat_cols:
+        value_counts = df[col].value_counts(normalize=True) * 100
+        fig, ax = plt.subplots(figsize=(8, 3))
+        #top_n = min(17, len(value_counts))
+        #ax.barh(value_counts.index[:top_n], value_counts.values[:top_n])
+        ax.barh(value_counts.index, value_counts.values)
+        ax.set_xlabel('Percentage Distribution')
+        ax.set_ylabel(f'{col}')
+        plt.tight_layout()
+        plt.show()
+    print("==================================================================")
